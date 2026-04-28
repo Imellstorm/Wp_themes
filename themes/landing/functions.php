@@ -27,12 +27,25 @@ add_action( 'after_setup_theme', 'landing_setup' );
  * Enqueue styles and scripts
  */
 function landing_scripts() {
-    wp_enqueue_style( 'landing-style', get_stylesheet_uri(), array(), '1.0.1' );
+    wp_enqueue_style( 'landing-style', get_stylesheet_uri(), array(), '1.0.6' );
     wp_enqueue_script( 'landing-faq', get_template_directory_uri() . '/assets/js/faq.js', array(), '1.0.0', true );
 
     if ( class_exists( 'WooCommerce' ) && is_front_page() ) {
         wp_enqueue_script( 'wc-add-to-cart' );
         wp_enqueue_script( 'wc-cart-fragments' );
+    }
+
+    if ( class_exists( 'WooCommerce' ) && function_exists( 'is_product' ) && is_product() ) {
+        // wc-add-to-cart provides window.wc_add_to_cart_params (wc_ajax_url, cart_url etc.)
+        wp_enqueue_script( 'wc-add-to-cart' );
+        wp_enqueue_script( 'wc-cart-fragments' );
+        wp_enqueue_script(
+            'landing-single-product',
+            get_template_directory_uri() . '/assets/js/single-product.js',
+            array( 'wc-add-to-cart' ),
+            '1.0.3',
+            true
+        );
     }
 }
 add_action( 'wp_enqueue_scripts', 'landing_scripts' );
@@ -53,6 +66,60 @@ function landing_cart_count_fragment( $fragments ) {
     return $fragments;
 }
 add_filter( 'woocommerce_add_to_cart_fragments', 'landing_cart_count_fragment' );
+
+/**
+ * Single product page — strip elements not used by the landing site
+ */
+function landing_woocommerce_single_product_cleanup() {
+    // Remove "Related products" block
+    remove_action( 'woocommerce_after_single_product_summary', 'woocommerce_output_related_products', 20 );
+    // Remove product meta block (categories, tags, SKU) — landing has no taxonomy
+    remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_meta', 40 );
+    // Remove the tabs section — Description is moved inline below the Add-to-cart button
+    remove_action( 'woocommerce_after_single_product_summary', 'woocommerce_output_product_data_tabs', 10 );
+
+    // Notices are rendered manually inside the .woocommerce-notice-bar above the section.
+    remove_action( 'woocommerce_before_main_content', 'woocommerce_output_all_notices', 10 );
+    remove_action( 'woocommerce_before_single_product', 'woocommerce_output_all_notices', 10 );
+    remove_action( 'woocommerce_before_shop_loop', 'woocommerce_output_all_notices', 10 );
+}
+add_action( 'init', 'landing_woocommerce_single_product_cleanup' );
+
+/**
+ * Remove the "Reviews" tab from single product pages
+ */
+function landing_remove_reviews_tab( $tabs ) {
+    unset( $tabs['reviews'] );
+    return $tabs;
+}
+add_filter( 'woocommerce_product_tabs', 'landing_remove_reviews_tab', 98 );
+
+/**
+ * Strip the "View cart" link from the add-to-cart success notice
+ */
+function landing_remove_view_cart_link( $message, $products ) {
+    return wp_strip_all_tags( preg_replace( '/<a [^>]*class="[^"]*button[^"]*wc-forward[^"]*"[^>]*>.*?<\/a>/is', '', $message ) );
+}
+add_filter( 'wc_add_to_cart_message_html', 'landing_remove_view_cart_link', 10, 2 );
+
+/**
+ * Render full product description inside the summary, right under the
+ * Add-to-cart button (priority 30 is the cart form, so we use 35).
+ */
+function landing_description_under_cart() {
+    global $product;
+    if ( ! $product instanceof WC_Product ) {
+        return;
+    }
+    $desc = $product->get_description();
+    if ( ! $desc ) {
+        return;
+    }
+    echo '<div class="landing-product-description">';
+    echo '<div class="landing-product-description__content">' . wp_kses_post( wpautop( $desc ) ) . '</div>';
+    echo '</div>';
+}
+add_action( 'woocommerce_single_product_summary', 'landing_description_under_cart', 35 );
 
 /**
  * Buy Now redirect — add to cart then go straight to checkout

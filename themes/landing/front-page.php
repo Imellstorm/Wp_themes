@@ -54,8 +54,17 @@ $faq_defaults = array(
 
         if ( $products ) : ?>
         <div class="products-grid">
-            <?php foreach ( $products as $product ) : ?>
+            <?php foreach ( $products as $product ) :
+                $permalink   = get_permalink( $product->get_id() );
+                $short_desc  = $product->get_short_description();
+                if ( ! $short_desc ) {
+                    $short_desc = wp_trim_words( $product->get_description(), 24, '&hellip;' );
+                }
+            ?>
             <div class="product-card">
+                <a href="<?php echo esc_url( $permalink ); ?>"
+                   class="product-card-link"
+                   aria-label="<?php echo esc_attr( $product->get_name() ); ?>"></a>
                 <div class="product-image">
                     <?php if ( $product->get_image_id() ) : ?>
                         <img src="<?php echo esc_url( wp_get_attachment_image_url( $product->get_image_id(), 'medium' ) ); ?>"
@@ -66,7 +75,7 @@ $faq_defaults = array(
                 </div>
                 <div class="product-info">
                     <h3 class="product-name"><?php echo esc_html( $product->get_name() ); ?></h3>
-                    <div class="product-desc"><?php echo wp_kses_post( wpautop( $product->get_description() ) ); ?></div>
+                    <div class="product-desc"><?php echo wp_kses_post( wpautop( $short_desc ) ); ?></div>
                     <div class="product-price"><?php echo $product->get_price_html(); ?></div>
                     <div class="product-actions">
                         <a href="<?php echo esc_url( $product->add_to_cart_url() ); ?>"
