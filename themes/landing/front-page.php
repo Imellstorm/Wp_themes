@@ -67,8 +67,15 @@ $faq_defaults = array(
                    aria-label="<?php echo esc_attr( $product->get_name() ); ?>"></a>
                 <div class="product-image">
                     <?php if ( $product->get_image_id() ) : ?>
-                        <img src="<?php echo esc_url( wp_get_attachment_image_url( $product->get_image_id(), 'medium' ) ); ?>"
-                             alt="<?php echo esc_attr( $product->get_name() ); ?>">
+                        <?php echo wp_get_attachment_image(
+                            $product->get_image_id(),
+                            'large',
+                            false,
+                            array(
+                                'alt'   => esc_attr( $product->get_name() ),
+                                'sizes' => '(max-width: 768px) 100vw, 220px',
+                            )
+                        ); ?>
                     <?php else : ?>
                         <div class="product-placeholder"></div>
                     <?php endif; ?>
