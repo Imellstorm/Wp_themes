@@ -2,7 +2,7 @@
 get_header();
 
 /* =====================================================
-   Cart page — when EMPTY, fully render our own layout
+   Empty cart — custom layout
    ===================================================== */
 $is_wc_cart_empty = function_exists( 'is_cart' )
     && is_cart()
@@ -55,9 +55,7 @@ if ( $is_wc_cart_empty ) :
                         }
                     ?>
                         <div class="product-card">
-                            <a href="<?php echo esc_url( $permalink ); ?>"
-                               class="product-card-link"
-                               aria-label="<?php echo esc_attr( $product->get_name() ); ?>"></a>
+                            <a href="<?php echo esc_url( $permalink ); ?>" class="product-card-link" aria-label="<?php echo esc_attr( $product->get_name() ); ?>"></a>
                             <div class="product-image">
                                 <span class="product-index">SKU/<?php echo esc_html( str_pad( $idx, 3, '0', STR_PAD_LEFT ) ); ?></span>
                                 <?php if ( $product->get_image_id() ) : ?>
@@ -91,14 +89,85 @@ if ( $is_wc_cart_empty ) :
 endif;
 
 /* =====================================================
-   All other pages — simple, untouched rendering
+   WC pages (cart with items / checkout / account / order received)
+   — simple rendering, no extra wrappers
    ===================================================== */
+$is_wc_page = function_exists( 'is_cart' ) && (
+    is_cart() ||
+    is_checkout() ||
+    is_account_page() ||
+    ( function_exists( 'is_order_received_page' ) && is_order_received_page() )
+);
+
+if ( $is_wc_page ) : ?>
+    <main class="section">
+        <div class="container">
+            <?php while ( have_posts() ) : the_post(); ?>
+                <h1><?php the_title(); ?></h1>
+                <div><?php the_content(); ?></div>
+            <?php endwhile; ?>
+        </div>
+    </main>
+    <?php
+    get_footer();
+    return;
+endif;
+
+/* =====================================================
+   Legal / standard pages — beautiful long-form layout
+   ===================================================== */
+$shop_url     = class_exists( 'WooCommerce' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/shop/' );
+$delivery_url = home_url( '/dostavka-ta-oplata/' );
+$offer_url    = home_url( '/dogovir-publichnoyi-oferty/' );
+$delivery_page = get_page_by_path( 'dostavka-ta-oplata' );
+if ( $delivery_page ) $delivery_url = get_permalink( $delivery_page );
+$offer_page = get_page_by_path( 'dogovir-publichnoyi-oferty' );
+if ( $offer_page ) $offer_url = get_permalink( $offer_page );
+
+$current_id = get_queried_object_id();
 ?>
-<main class="section">
+
+<main class="section section--legal">
     <div class="container">
         <?php while ( have_posts() ) : the_post(); ?>
-            <h1><?php the_title(); ?></h1>
-            <div><?php the_content(); ?></div>
+            <article class="legal-page">
+                <header class="legal-page__header">
+                    <span class="eyebrow">Документ</span>
+                    <h1 class="legal-page__title"><?php the_title(); ?></h1>
+                    <p class="legal-page__date">
+                        Оновлено:
+                        <time datetime="<?php echo esc_attr( get_the_modified_date( 'c' ) ); ?>">
+                            <?php echo esc_html( get_the_modified_date( 'j F Y' ) ); ?>
+                        </time>
+                    </p>
+                </header>
+
+                <div class="legal-page__content">
+                    <?php the_content(); ?>
+                </div>
+
+                <footer class="legal-page__footer">
+                    <span class="eyebrow">Інші документи</span>
+                    <nav class="legal-page__nav" aria-label="Other legal documents">
+                        <?php if ( $current_id !== ( $delivery_page ? $delivery_page->ID : 0 ) ) : ?>
+                            <a href="<?php echo esc_url( $delivery_url ); ?>" class="legal-page__nav-link">
+                                <span class="legal-page__nav-label">Доставка та Оплата</span>
+                                <span class="legal-page__nav-arrow">→</span>
+                            </a>
+                        <?php endif; ?>
+                        <?php if ( $current_id !== ( $offer_page ? $offer_page->ID : 0 ) ) : ?>
+                            <a href="<?php echo esc_url( $offer_url ); ?>" class="legal-page__nav-link">
+                                <span class="legal-page__nav-label">Договір публічної оферти</span>
+                                <span class="legal-page__nav-arrow">→</span>
+                            </a>
+                        <?php endif; ?>
+                        <a href="<?php echo esc_url( $shop_url ); ?>" class="legal-page__nav-link">
+                            <span class="legal-page__nav-label">Перейти до магазину</span>
+                            <span class="legal-page__nav-arrow">→</span>
+                        </a>
+                    </nav>
+                </footer>
+            </article>
         <?php endwhile; ?>
     </div>
 </main>
