@@ -62,14 +62,23 @@ $is_cat_arch = is_product_category();
 $current_cat = $is_cat_arch ? get_queried_object() : null;
 
 // === Filter params ===
+// Read from "filter_cat[]" (NOT "product_cat[]" — the latter is a reserved
+// WP taxonomy query var; passing it as an array crashes the main query).
 $sel_cats = array();
-if ( ! empty( $_GET['product_cat'] ) ) {
-    $raw = (array) $_GET['product_cat'];
+if ( ! empty( $_GET['filter_cat'] ) ) {
+    $raw = (array) $_GET['filter_cat'];
     foreach ( $raw as $slug ) {
         $slug = sanitize_title( $slug );
         if ( $slug ) {
             $sel_cats[] = $slug;
         }
+    }
+}
+// Header-search dropdown still uses single product_cat=slug (string, safe)
+if ( ! empty( $_GET['product_cat'] ) && is_string( $_GET['product_cat'] ) ) {
+    $slug = sanitize_title( wp_unslash( $_GET['product_cat'] ) );
+    if ( $slug && ! in_array( $slug, $sel_cats, true ) ) {
+        $sel_cats[] = $slug;
     }
 }
 if ( $current_cat && ! in_array( $current_cat->slug, $sel_cats, true ) ) {
@@ -145,7 +154,7 @@ if ( is_wp_error( $all_cats ) ) {
     $all_cats = array();
 }
 
-$has_active_filters = ! empty( $_GET['product_cat'] ) || $min_price !== '' || $max_price !== '';
+$has_active_filters = ! empty( $_GET['filter_cat'] ) || ! empty( $_GET['product_cat'] ) || $min_price !== '' || $max_price !== '';
 ?>
 
 <div class="woocommerce-notice-bar">
@@ -176,7 +185,7 @@ $has_active_filters = ! empty( $_GET['product_cat'] ) || $min_price !== '' || $m
                                 ?>
                                     <li>
                                         <label class="filter-cat <?php echo $is_current_cat ? 'filter-cat--current' : ''; ?>">
-                                            <input type="checkbox" name="product_cat[]" value="<?php echo esc_attr( $cat->slug ); ?>"
+                                            <input type="checkbox" name="filter_cat[]" value="<?php echo esc_attr( $cat->slug ); ?>"
                                                 <?php checked( $is_checked ); ?>
                                                 <?php disabled( $is_current_cat ); ?>>
                                             <span class="filter-cat__name"><?php echo esc_html( $cat->name ); ?></span>
