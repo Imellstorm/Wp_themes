@@ -30,12 +30,11 @@ if ( ! $featured_q->have_posts() ) {
 }
 $featured_ids = wp_list_pluck( $featured_q->posts, 'ID' );
 
-/* ── Latest (9) + categories for filter chips. Excludes featured to avoid dupes. */
+/* ── Latest (9) + categories for filter chips. */
 $active_cat_slug = isset( $_GET['cat'] ) ? sanitize_title( wp_unslash( $_GET['cat'] ) ) : 'all';
 $latest_args = [
 	'posts_per_page'      => 9,
 	'ignore_sticky_posts' => true,
-	'post__not_in'        => $featured_ids,
 ];
 if ( $active_cat_slug && $active_cat_slug !== 'all' ) {
 	$latest_args['category_name'] = $active_cat_slug;
@@ -123,11 +122,59 @@ $all_count  = wp_count_posts()->publish;
 			</div>
 			<?php if ( $latest_q->max_num_pages > 1 ) : ?>
 				<div class="load-more">
-					<a class="btn btn-ghost btn-lg" href="<?php echo esc_url( get_post_type_archive_link( 'post' ) ?: home_url( '/?paged=2' ) ); ?>">
-						<?php esc_html_e( 'Load more essays', 'devpoint' ); ?>
+					<button type="button"
+					        class="btn btn-ghost btn-lg"
+					        id="devpoint-load-more"
+					        data-page="2"
+					        data-cat="<?php echo esc_attr( $active_cat_slug ); ?>"
+					        data-nonce="<?php echo esc_attr( wp_create_nonce( 'devpoint_load_more' ) ); ?>"
+					        data-ajax="<?php echo esc_attr( admin_url( 'admin-ajax.php' ) ); ?>">
+						<span class="lm-label"><?php esc_html_e( 'Load more essays', 'devpoint' ); ?></span>
 						<?php devpoint_the_icon( 'chevron', [ 'size' => 16, 'class' => 'rot-90' ] ); ?>
-					</a>
+					</button>
 				</div>
+				<script>
+				(function(){
+					var btn = document.getElementById('devpoint-load-more');
+					if (!btn) return;
+					var wrap  = btn.closest('.wrap');
+					var grid  = wrap && wrap.querySelector('.latest-grid');
+					var label = btn.querySelector('.lm-label');
+					var origLabel = label ? label.textContent : '';
+					if (!grid) return;
+					btn.addEventListener('click', function(){
+						if (btn.disabled) return;
+						btn.disabled = true;
+						if (label) label.textContent = 'Loading…';
+						var fd = new FormData();
+						fd.append('action', 'devpoint_load_more_essays');
+						fd.append('page', btn.dataset.page);
+						fd.append('cat', btn.dataset.cat);
+						fd.append('nonce', btn.dataset.nonce);
+						fetch(btn.dataset.ajax, { method: 'POST', body: fd, credentials: 'same-origin' })
+							.then(function(r){ return r.json(); })
+							.then(function(j){
+								btn.disabled = false;
+								if (label) label.textContent = origLabel;
+								if (j && j.success && j.data) {
+									if (j.data.html) grid.insertAdjacentHTML('beforeend', j.data.html);
+									if (j.data.has_more) {
+										btn.dataset.page = j.data.next_page;
+									} else {
+										btn.parentNode.remove();
+									}
+								} else {
+									alert('Failed to load more.');
+								}
+							})
+							.catch(function(){
+								btn.disabled = false;
+								if (label) label.textContent = origLabel;
+								alert('Network error.');
+							});
+					});
+				})();
+				</script>
 			<?php endif; ?>
 		<?php else : ?>
 			<div class="empty-state">

@@ -1473,7 +1473,7 @@ footer.ftr {
 
 .reader-hero {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 32 / 9;
   border-radius: var(--radius-lg);
   overflow: hidden;
   margin-bottom: 40px;

@@ -177,7 +177,7 @@
   width: 100%;
   max-width: 1040px;
   margin: 0 auto;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 32 / 9;
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--paper-2);
