@@ -45,16 +45,16 @@ html { scroll-padding-top: 80px; }
 }
 
 /* Tighter spacings overriding base.css defaults. */
-.cat-tile { gap: 18px !important; }
+.cat-tile { gap: 30px !important; justify-content: flex-start !important; aspect-ratio: auto !important; }
 
-.latest-grid { gap: 20px 0 !important; }
-@media (min-width: 640px)  { .latest-grid { gap: 20px 20px !important; } }
-@media (min-width: 1000px) { .latest-grid { gap: 20px 20px !important; } }
+.latest-grid { gap: 50px 0 !important; }
+@media (min-width: 640px)  { .latest-grid { gap: 50px 20px !important; } }
+@media (min-width: 1000px) { .latest-grid { gap: 50px 20px !important; } }
 
 /* Inside a card: pull the meta close to the excerpt and shrink the
    reserved height for title (was 3 lines) and excerpt (was 4 lines). */
 .card { gap: 10px !important; }
-.card p + .card-meta { margin-top: 6px !important; }
+.card p + .card-meta { margin-top: auto !important; padding-top: 10px !important; }
 .card h3 { min-height: calc(1.15em * 2) !important; }
 .card p  { min-height: calc(1.5em * 2)  !important; }
 

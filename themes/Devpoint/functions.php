@@ -14,6 +14,7 @@ require_once get_template_directory() . '/inc/thumb-art.php';
 require_once get_template_directory() . '/inc/template-tags.php';
 if ( is_admin() ) {
 	require_once get_template_directory() . '/inc/seed.php';
+	require_once get_template_directory() . '/inc/admin-regen-art.php';
 }
 
 /**

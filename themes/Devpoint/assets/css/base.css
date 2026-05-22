@@ -539,8 +539,8 @@ main { padding-bottom: 80px; }
   color: inherit;
   width: 100%;
 }
-.card h3 + p { margin-top: -4px; }
-.card p + .card-meta { margin-top: 20px; }
+.card h3 + p { margin-top: 6px; }
+.card p + .card-meta { margin-top: auto; padding-top: 16px; }
 .card:hover .card-thumb { transform: translateY(-2px); }
 .card:hover .card-thumb img,
 .card:hover .card-thumb .thumb-art { transform: scale(1.04); }
@@ -791,10 +791,10 @@ a.author-tag:hover .author-name { text-decoration: underline; text-underline-off
 .latest-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 112px 0;
+  gap: 50px 0;
 }
-@media (min-width: 640px) { .latest-grid { grid-template-columns: 1fr 1fr; gap: 108px 24px; } }
-@media (min-width: 1000px) { .latest-grid { grid-template-columns: repeat(3, 1fr); gap: 116px 28px; } }
+@media (min-width: 640px) { .latest-grid { grid-template-columns: 1fr 1fr; gap: 50px 24px; } }
+@media (min-width: 1000px) { .latest-grid { grid-template-columns: repeat(3, 1fr); gap: 50px 28px; } }
 
 .filter-bar {
   display: flex;
