@@ -279,7 +279,7 @@
   /* override the big Latest gap on this page */
   gap: 56px 24px !important;
   grid-template-columns: 1fr !important;
-  max-width: 820px;
+  max-width: 720px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -295,21 +295,13 @@
   text-align: center;
   flex-direction: column;
   align-items: center;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .post-related-section .section-h h2 {
   max-width: none;
 }
 .post-related-section .section-h .eyebrow {
   justify-content: center;
-}
-
-/* Avoid the fixed On-this-page ToC sitting in the left margin and
-   keep the article CTA centered on the same axis as the related grid */
-@media (min-width: 1240px) {
-  .post-related-section > .wrap {
-    padding-left: 260px;
-  }
-  .post-body-wrap > .post-cta {
-    transform: translateX(106px);
-  }
 }
