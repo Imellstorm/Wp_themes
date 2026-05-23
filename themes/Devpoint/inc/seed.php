@@ -18,36 +18,50 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 function devpoint_seed_admin_notice() {
 	if ( ! current_user_can( 'manage_options' ) ) return;
-	$count = (int) wp_count_posts()->publish;
-	if ( $count >= 6 ) return;
+	$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+	if ( ! $screen || $screen->base !== 'edit' ) return;
 
-	$url = wp_nonce_url(
-		add_query_arg( 'devpoint_seed', 'run', admin_url( 'edit.php' ) ),
-		'devpoint_seed'
-	);
-	?>
-	<div class="notice notice-info">
-		<p>
-			<strong>devpoint:</strong>
-			<?php esc_html_e( "It looks like you don't have many posts yet — want to seed 11 Lorem ipsum essays across 5 sample categories?", 'devpoint' ); ?>
-			<a href="<?php echo esc_url( $url ); ?>" class="button button-primary" style="margin-left:8px;">
-				<?php esc_html_e( 'Seed sample content', 'devpoint' ); ?>
-			</a>
-		</p>
-	</div>
-	<?php
+	$count    = (int) wp_count_posts()->publish;
+	$run_url  = wp_nonce_url( add_query_arg( 'devpoint_seed', 'run',     admin_url( 'edit.php' ) ), 'devpoint_seed' );
+	$ref_url  = wp_nonce_url( add_query_arg( 'devpoint_seed', 'refresh', admin_url( 'edit.php' ) ), 'devpoint_seed' );
+
+	if ( $count < 6 ) : ?>
+		<div class="notice notice-info">
+			<p>
+				<strong>devpoint:</strong>
+				<?php esc_html_e( "It looks like you don't have many posts yet — want to seed 11 Lorem ipsum essays across 5 sample categories?", 'devpoint' ); ?>
+				<a href="<?php echo esc_url( $run_url ); ?>" class="button button-primary" style="margin-left:8px;">
+					<?php esc_html_e( 'Seed sample content', 'devpoint' ); ?>
+				</a>
+			</p>
+		</div>
+	<?php else : ?>
+		<div class="notice notice-info is-dismissible">
+			<p>
+				<strong>devpoint:</strong>
+				<?php esc_html_e( 'Refresh seeded post bodies (re-applies the latest template — headings, structure, etc.).', 'devpoint' ); ?>
+				<a href="<?php echo esc_url( $ref_url ); ?>" class="button" style="margin-left:8px;">
+					<?php esc_html_e( 'Refresh seed bodies', 'devpoint' ); ?>
+				</a>
+			</p>
+		</div>
+	<?php endif;
 }
 add_action( 'admin_notices', 'devpoint_seed_admin_notice' );
 
 /**
- * Handle the seed request.
+ * Handle the seed request. `?devpoint_seed=run` creates missing posts;
+ * `?devpoint_seed=refresh` ALSO overwrites bodies of existing seeded
+ * posts — useful when the body template changes (TOC headings, etc.).
  */
 function devpoint_seed_handle() {
-	if ( ! isset( $_GET['devpoint_seed'] ) || $_GET['devpoint_seed'] !== 'run' ) return;
+	if ( ! isset( $_GET['devpoint_seed'] ) ) return;
+	$mode = $_GET['devpoint_seed'];
+	if ( ! in_array( $mode, [ 'run', 'refresh' ], true ) ) return;
 	if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Forbidden.' );
 	check_admin_referer( 'devpoint_seed' );
 
-	$result = devpoint_seed_run();
+	$result = devpoint_seed_run( $mode === 'refresh' );
 
 	set_transient( 'devpoint_seed_result', $result, 60 );
 	wp_safe_redirect( admin_url( 'edit.php?devpoint_seeded=1' ) );
@@ -68,12 +82,13 @@ function devpoint_seed_result_notice() {
 		<p>
 			<strong>devpoint:</strong>
 			<?php
-			/* translators: 1: post count, 2: category count, 3: sticky count */
+			/* translators: 1: post count, 2: category count, 3: sticky count, 4: refreshed count */
 			printf(
-				esc_html__( 'Seeded %1$d posts across %2$d categories. %3$d marked as sticky for the Editor\'s picks block.', 'devpoint' ),
+				esc_html__( 'Seeded %1$d posts across %2$d categories. %3$d marked as sticky. %4$d existing posts refreshed.', 'devpoint' ),
 				(int) $res['posts'],
 				(int) $res['cats'],
-				(int) $res['sticky']
+				(int) $res['sticky'],
+				(int) ( $res['refreshed'] ?? 0 )
 			);
 			?>
 		</p>
@@ -85,9 +100,11 @@ add_action( 'admin_notices', 'devpoint_seed_result_notice' );
 /**
  * Actually create the categories and posts.
  *
- * @return array { posts, cats, sticky }
+ * @param bool $refresh When true, overwrite post_content of existing posts
+ *                      that share a seeded slug. Titles / dates are left alone.
+ * @return array { posts, cats, sticky, refreshed }
  */
-function devpoint_seed_run() {
+function devpoint_seed_run( $refresh = false ) {
 	$category_specs = [
 		[ 'slug' => 'web',    'name' => 'Web Development',   'description' => 'Building sites that earn their keep — design, performance, and the unglamorous middle bits.' ],
 		[ 'slug' => 'mobile', 'name' => 'Mobile Apps',        'description' => 'iOS, Android, and the road from idea to App Store.' ],
@@ -130,16 +147,27 @@ function devpoint_seed_run() {
 
 	$lorem = devpoint_seed_lorem();
 
-	$posts_created = 0;
-	$sticky_ids    = [];
-	$base_time     = current_time( 'timestamp' ) - DAY_IN_SECONDS;
-	$i             = 0;
+	$posts_created   = 0;
+	$posts_refreshed = 0;
+	$sticky_ids      = [];
+	$base_time       = current_time( 'timestamp' ) - DAY_IN_SECONDS;
+	$i               = 0;
 
 	foreach ( $post_specs as $spec ) {
-		$slug = sanitize_title( $spec['title'] );
-		if ( get_page_by_path( $slug, OBJECT, 'post' ) ) {
+		$slug     = sanitize_title( $spec['title'] );
+		$existing = get_page_by_path( $slug, OBJECT, 'post' );
+
+		if ( $existing ) {
+			if ( $refresh ) {
+				wp_update_post( [
+					'ID'           => $existing->ID,
+					'post_content' => $lorem[ $i % count( $lorem ) ],
+				] );
+				$posts_refreshed++;
+			}
 			$i++; continue;
 		}
+
 		$post_id = wp_insert_post( [
 			'post_title'   => $spec['title'],
 			'post_content' => $lorem[ $i % count( $lorem ) ],
@@ -168,9 +196,10 @@ function devpoint_seed_run() {
 	}
 
 	return [
-		'posts'  => $posts_created,
-		'cats'   => $cats_created,
-		'sticky' => count( $sticky_ids ),
+		'posts'     => $posts_created,
+		'cats'      => $cats_created,
+		'sticky'    => count( $sticky_ids ),
+		'refreshed' => $posts_refreshed,
 	];
 }
 
@@ -186,16 +215,39 @@ function devpoint_seed_lorem() {
 		'Donec euismod, dolor non suscipit pulvinar, nisl ipsum tincidunt risus, sit amet luctus erat libero in lectus. In hac habitasse platea dictumst. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.',
 		'Vivamus ornare nibh nec mi pulvinar, ut sagittis libero faucibus. Aenean quis turpis libero. Etiam non eros at nulla suscipit fermentum non eget purus. Phasellus convallis purus vel diam dignissim, vitae luctus magna placerat.',
 	];
+	$sections = [
+		[ 'Start with the outcome',     [ 'Define your north star',     'Avoid premature scope' ] ],
+		[ 'Where the budget goes',      [ 'Engineering vs. design',     'Hidden infra costs' ] ],
+		[ 'What to ask before signing', [ 'Scope-creep red flags',      'Payment milestones' ] ],
+		[ 'A note on timelines',        [ 'Why estimates lie',          'Buffers that work' ] ],
+		[ 'Beyond the launch',          [ 'The first 30 days',          'Iterate vs. rebuild' ] ],
+	];
+
 	$bodies = [];
 	for ( $n = 0; $n < 11; $n++ ) {
+		// Intro
 		$body  = '<p>' . $P[ $n % 5 ] . '</p>';
 		$body .= '<p>' . $P[ ( $n + 1 ) % 5 ] . '</p>';
-		$body .= '<h2>' . [ 'Start with the outcome', 'Where the budget goes', 'What to ask before signing', 'A note on timelines', 'Beyond the launch' ][ $n % 5 ] . '</h2>';
-		$body .= '<p>' . $P[ ( $n + 2 ) % 5 ] . '</p>';
-		$body .= '<blockquote>' . $P[ ( $n + 3 ) % 5 ] . '</blockquote>';
-		$body .= '<p>' . $P[ ( $n + 4 ) % 5 ] . '</p>';
-		$body .= '<ul><li>' . substr( $P[0], 0, 60 ) . '…</li><li>' . substr( $P[1], 0, 60 ) . '…</li><li>' . substr( $P[2], 0, 60 ) . '…</li></ul>';
-		$body .= '<p>' . $P[ $n % 5 ] . '</p>';
+
+		// 3 h2 sections, each with an h3 subsection — gives the TOC something to chew on.
+		for ( $s = 0; $s < 3; $s++ ) {
+			$sect = $sections[ ( $n + $s ) % count( $sections ) ];
+			$body .= '<h2>' . $sect[0] . '</h2>';
+			$body .= '<p>' . $P[ ( $n + $s + 2 ) % 5 ] . '</p>';
+
+			$body .= '<h3>' . $sect[1][0] . '</h3>';
+			$body .= '<p>' . $P[ ( $n + $s + 3 ) % 5 ] . '</p>';
+
+			if ( $s === 0 ) {
+				$body .= '<h3>' . $sect[1][1] . '</h3>';
+				$body .= '<p>' . $P[ ( $n + $s + 4 ) % 5 ] . '</p>';
+				$body .= '<ul><li>' . substr( $P[0], 0, 60 ) . '…</li><li>' . substr( $P[1], 0, 60 ) . '…</li><li>' . substr( $P[2], 0, 60 ) . '…</li></ul>';
+			}
+			if ( $s === 1 ) {
+				$body .= '<blockquote>' . $P[ ( $n + 3 ) % 5 ] . '</blockquote>';
+			}
+		}
+
 		$bodies[] = $body;
 	}
 	return $bodies;

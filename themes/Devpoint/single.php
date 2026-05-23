@@ -59,9 +59,81 @@ while ( have_posts() ) : the_post();
 			</div>
 		</div>
 
+		<?php
+			ob_start();
+			the_content();
+			$raw_content = ob_get_clean();
+			$processed   = devpoint_inject_toc( $raw_content );
+		?>
+
+		<?php if ( ! empty( $processed['toc'] ) ) : ?>
+			<aside class="post-toc" id="post-toc" aria-label="<?php esc_attr_e( 'On this page', 'devpoint' ); ?>">
+				<div class="post-toc-label"><?php esc_html_e( 'On this page', 'devpoint' ); ?></div>
+				<ol class="post-toc-list">
+					<?php foreach ( $processed['toc'] as $item ) : ?>
+						<li class="post-toc-item lvl-<?php echo (int) $item['level']; ?>">
+							<a href="#<?php echo esc_attr( $item['id'] ); ?>"><?php echo esc_html( $item['text'] ); ?></a>
+						</li>
+					<?php endforeach; ?>
+				</ol>
+			</aside>
+			<script>
+			(function(){
+				var toc = document.getElementById('post-toc');
+				if (!toc) return;
+
+				// Anchor the TOC below the hero image — until the hero
+				// scrolls past the top of the viewport, at which point the
+				// TOC sticks at MIN_TOP px.
+				var hero    = document.querySelector('.post-hero-wrap') || document.querySelector('.post-hero');
+				var MIN_TOP = 110;
+				var GAP     = 24;
+				var rafId   = 0;
+
+				function syncTop() {
+					rafId = 0;
+					if (!hero) return;
+					var bottom = hero.getBoundingClientRect().bottom;
+					var top    = bottom + GAP;
+					if (top < MIN_TOP) top = MIN_TOP;
+					toc.style.top = top + 'px';
+				}
+				function schedule() {
+					if (rafId) return;
+					rafId = requestAnimationFrame(syncTop);
+				}
+				syncTop();
+				window.addEventListener('scroll', schedule, { passive: true });
+				window.addEventListener('resize', schedule);
+
+				// Highlight the section the reader is currently on.
+				if (!('IntersectionObserver' in window)) return;
+				var links = Array.prototype.slice.call(toc.querySelectorAll('a[href^="#"]'));
+				var map = {};
+				links.forEach(function(a){
+					var id = decodeURIComponent(a.getAttribute('href').slice(1));
+					var el = document.getElementById(id);
+					if (el) map[id] = a;
+				});
+				var ids = Object.keys(map);
+				if (!ids.length) return;
+				var setActive = function(id){
+					links.forEach(function(a){ a.parentElement.classList.remove('active'); });
+					if (map[id]) map[id].parentElement.classList.add('active');
+				};
+				var io = new IntersectionObserver(function(entries){
+					entries.forEach(function(e){
+						if (e.isIntersecting) setActive(e.target.id);
+					});
+				}, { rootMargin: '-20% 0px -70% 0px' });
+				ids.forEach(function(id){ io.observe(document.getElementById(id)); });
+			})();
+			</script>
+		<?php endif; ?>
+
 		<div class="wrap post-body-wrap">
 			<div class="reader-content post-content">
-				<?php the_content(); ?>
+				<?php echo $processed['content']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — already filtered by the_content ?>
 				<?php wp_link_pages( [
 					'before' => '<div class="post-pagination">' . esc_html__( 'Pages:', 'devpoint' ),
 					'after'  => '</div>',
@@ -84,7 +156,7 @@ while ( have_posts() ) : the_post();
 	<?php
 	/* ── Related ─────────────────────────────────────────────────────────── */
 	$related_args = [
-		'posts_per_page'      => 3,
+		'posts_per_page'      => 2,
 		'post__not_in'        => [ $post->ID ],
 		'ignore_sticky_posts' => true,
 	];
@@ -92,7 +164,7 @@ while ( have_posts() ) : the_post();
 
 	$related_q = new WP_Query( $related_args );
 	if ( $related_q->have_posts() ) : ?>
-		<section class="section">
+		<section class="section post-related-section">
 			<div class="wrap">
 				<div class="section-h">
 					<div>

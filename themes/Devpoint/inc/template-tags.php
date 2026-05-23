@@ -9,6 +9,47 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
+ * Walk through post HTML, inject `id` attributes on h2/h3 headings (when
+ * missing) and collect a flat TOC array. Returns [ 'content' => HTML,
+ * 'toc' => [ [ id, text, level ], … ] ].
+ */
+function devpoint_inject_toc( $content ) {
+	$toc      = [];
+	$used_ids = [];
+
+	$content = preg_replace_callback(
+		'/<(h[23])\b([^>]*)>(.*?)<\/\1>/is',
+		function ( $m ) use ( &$toc, &$used_ids ) {
+			$tag        = strtolower( $m[1] );
+			$attrs      = $m[2];
+			$inner_html = $m[3];
+			$text       = trim( wp_strip_all_tags( $inner_html ) );
+			if ( $text === '' ) return $m[0];
+
+			if ( preg_match( '/\sid=["\']([^"\']+)["\']/i', $attrs, $idm ) ) {
+				$id = $idm[1];
+			} else {
+				$base = sanitize_title( $text );
+				if ( $base === '' ) $base = 'section';
+				$id   = $base;
+				$n    = 2;
+				while ( isset( $used_ids[ $id ] ) ) {
+					$id = $base . '-' . $n++;
+				}
+				$attrs .= ' id="' . esc_attr( $id ) . '"';
+			}
+			$used_ids[ $id ] = true;
+			$toc[]           = [ 'id' => $id, 'text' => $text, 'level' => ( $tag === 'h2' ? 2 : 3 ) ];
+
+			return '<' . $tag . $attrs . '>' . $inner_html . '</' . $tag . '>';
+		},
+		$content
+	);
+
+	return [ 'content' => $content, 'toc' => $toc ];
+}
+
+/**
  * Two-letter initials from a name. Mirrors the JS initials() helper.
  */
 function devpoint_initials( $name ) {
