@@ -56,4 +56,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (searchToggle) searchToggle.focus();
         }
     });
+
+    /* Main nav (WP menu) — mobile toggle */
+    var navToggle = document.querySelector('.main-nav-toggle');
+    var navInner  = document.querySelector('.main-nav-inner');
+
+    if (navToggle && navInner) {
+        navToggle.addEventListener('click', function () {
+            var isOpen = navInner.classList.toggle('open');
+            navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+    }
 });

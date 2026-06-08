@@ -62,6 +62,29 @@
         </div>
     </div>
 
+        <nav class="main-nav" aria-label="<?php esc_attr_e( 'Головне меню', 'corporate' ); ?>">
+            <div class="container main-nav-inner">
+                <button class="main-nav-toggle" type="button" aria-label="Меню" aria-expanded="false" aria-controls="primary-menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"/>
+                        <path d="M3 12h18"/>
+                        <path d="M3 18h18"/>
+                    </svg>
+                    <span>Меню</span>
+                </button>
+                <?php
+                wp_nav_menu( array(
+                    'theme_location' => 'primary',
+                    'container'      => false,
+                    'menu_id'        => 'primary-menu',
+                    'menu_class'     => 'main-nav-menu',
+                    'fallback_cb'    => 'corporate_primary_menu_fallback',
+                    'depth'          => 2,
+                ) );
+                ?>
+            </div>
+        </nav>
+
     <?php
     $product_categories = array();
     if ( class_exists( 'WooCommerce' ) ) {

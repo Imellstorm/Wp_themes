@@ -42,13 +42,78 @@ function corporate_setup() {
         'flex-height' => true,
         'flex-width'  => true,
     ) );
-    add_theme_support( 'html5', array( 'search-form', 'comment-form', 'comment-list', 'gallery', 'caption' ) );
+    add_theme_support( 'html5', array( 'search-form', 'comment-form', 'comment-list', 'gallery', 'caption', 'navigation-widgets' ) );
     add_theme_support( 'woocommerce' );
+
+    register_nav_menus( array(
+        'primary' => __( 'Головне меню', 'corporate' ),
+        'footer'  => __( 'Меню в підвалі', 'corporate' ),
+    ) );
     add_theme_support( 'wc-product-gallery-zoom' );
     add_theme_support( 'wc-product-gallery-lightbox' );
     add_theme_support( 'wc-product-gallery-slider' );
 }
 add_action( 'after_setup_theme', 'corporate_setup' );
+
+/**
+ * Fallback for the primary nav menu — shown until an admin assigns a real
+ * menu in Appearance → Menus. Lists shop + top-level pages so the bar is
+ * never empty on a fresh install.
+ */
+function corporate_primary_menu_fallback() {
+    echo '<ul id="primary-menu" class="main-nav-menu">';
+
+    echo '<li class="menu-item' . ( is_front_page() ? ' current-menu-item' : '' ) . '">';
+    echo '<a href="' . esc_url( home_url( '/' ) ) . '">' . esc_html__( 'Головна', 'corporate' ) . '</a></li>';
+
+    if ( class_exists( 'WooCommerce' ) && function_exists( 'wc_get_page_id' ) ) {
+        $shop_id = wc_get_page_id( 'shop' );
+        if ( $shop_id > 0 ) {
+            echo '<li class="menu-item' . ( is_shop() ? ' current-menu-item' : '' ) . '">';
+            echo '<a href="' . esc_url( get_permalink( $shop_id ) ) . '">' . esc_html__( 'Магазин', 'corporate' ) . '</a></li>';
+        }
+    }
+
+    wp_list_pages( array(
+        'title_li'    => '',
+        'depth'       => 1,
+        'sort_column' => 'menu_order, post_title',
+        'exclude'     => function_exists( 'wc_get_page_id' )
+            ? implode( ',', array_filter( array(
+                wc_get_page_id( 'cart' ),
+                wc_get_page_id( 'checkout' ),
+                wc_get_page_id( 'myaccount' ),
+            ), function ( $id ) { return $id > 0; } ) )
+            : '',
+    ) );
+
+    echo '</ul>';
+}
+
+/**
+ * Fallback for the footer nav menu — keeps the original Shop / Delivery /
+ * Offer links until an admin assigns a real menu to the "footer" location.
+ */
+function corporate_footer_menu_fallback() {
+    $shop_url     = class_exists( 'WooCommerce' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/shop/' );
+    $delivery_url = home_url( '/dostavka-ta-oplata/' );
+    $offer_url    = home_url( '/dogovir-publichnoyi-oferty/' );
+
+    $delivery_page = get_page_by_path( 'dostavka-ta-oplata' );
+    if ( $delivery_page ) {
+        $delivery_url = get_permalink( $delivery_page );
+    }
+    $offer_page = get_page_by_path( 'dogovir-publichnoyi-oferty' );
+    if ( $offer_page ) {
+        $offer_url = get_permalink( $offer_page );
+    }
+
+    echo '<ul class="footer-nav-menu">';
+    echo '<li class="menu-item"><a href="' . esc_url( $shop_url ) . '" class="footer-link">' . esc_html__( 'Магазин', 'corporate' ) . '</a></li>';
+    echo '<li class="menu-item"><a href="' . esc_url( $delivery_url ) . '" class="footer-link">' . esc_html__( 'Доставка та Оплата', 'corporate' ) . '</a></li>';
+    echo '<li class="menu-item"><a href="' . esc_url( $offer_url ) . '" class="footer-link">' . esc_html__( 'Договір публічної оферти', 'corporate' ) . '</a></li>';
+    echo '</ul>';
+}
 
 function corporate_scripts() {
     wp_enqueue_style(
@@ -57,8 +122,8 @@ function corporate_scripts() {
         array(),
         null
     );
-    wp_enqueue_style( 'corporate-style', get_stylesheet_uri(), array(), '1.1.9' );
-    wp_enqueue_script( 'corporate-faq', get_template_directory_uri() . '/assets/js/faq.js', array(), '1.0.4', true );
+    wp_enqueue_style( 'corporate-style', get_stylesheet_uri(), array(), '1.2.1' );
+    wp_enqueue_script( 'corporate-faq', get_template_directory_uri() . '/assets/js/faq.js', array(), '1.0.5', true );
 
     if ( class_exists( 'WooCommerce' ) && is_front_page() ) {
         wp_enqueue_script( 'wc-add-to-cart' );
