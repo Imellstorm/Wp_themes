@@ -122,7 +122,7 @@ function corporate_scripts() {
         array(),
         null
     );
-    wp_enqueue_style( 'corporate-style', get_stylesheet_uri(), array(), '1.2.1' );
+    wp_enqueue_style( 'corporate-style', get_stylesheet_uri(), array(), '1.3.2' );
     wp_enqueue_script( 'corporate-faq', get_template_directory_uri() . '/assets/js/faq.js', array(), '1.0.5', true );
 
     if ( class_exists( 'WooCommerce' ) && is_front_page() ) {
@@ -157,6 +157,53 @@ function corporate_scripts() {
 add_action( 'wp_enqueue_scripts', 'corporate_scripts' );
 
 add_filter( 'pre_option_woocommerce_enable_ajax_add_to_cart', function () { return 'yes'; } );
+
+/**
+ * Checkout: lock the store to Ukraine.
+ *
+ * The Nova Poshta selector (Morkva UA Shipping) only renders its
+ * city / warehouse / parcel-locker fields when the checkout country is UA.
+ * Restricting the allowed countries to a single value makes WooCommerce
+ * preselect Ukraine and render the country control as a hidden field, so
+ * the customer never has to pick a country and the NP form is always shown.
+ */
+add_filter( 'default_checkout_billing_country',  function () { return 'UA'; }, 99 );
+add_filter( 'default_checkout_shipping_country', function () { return 'UA'; }, 99 );
+
+function corporate_only_ukraine( $countries ) {
+    $label = isset( $countries['UA'] ) ? $countries['UA'] : 'Україна';
+    return array( 'UA' => $label );
+}
+add_filter( 'woocommerce_countries_allowed_countries',  'corporate_only_ukraine', 99 );
+add_filter( 'woocommerce_countries_shipping_countries', 'corporate_only_ukraine', 99 );
+
+/**
+ * Remove the standard WooCommerce shipping-address block (and its
+ * "Ship to a different address?" toggle). Nova Poshta (Morkva) collects the
+ * delivery point through its own fields hooked to woocommerce_before_order_notes,
+ * so the native shipping address form is redundant here.
+ */
+add_filter( 'woocommerce_cart_needs_shipping_address', '__return_false' );
+
+/**
+ * Critical inline CSS printed at the very top of <head> on the checkout page.
+ *
+ * The native shipping-address block is already removed server-side, but if a
+ * stale/cached external stylesheet or late CSS load lets it slip into the first
+ * paint, this render-blocking inline rule hides it before anything is painted —
+ * so the "Ship to a different address?" block can never flash in.
+ */
+function corporate_checkout_critical_css() {
+    if ( ! function_exists( 'is_checkout' ) || ! is_checkout() ) {
+        return;
+    }
+    echo '<style id="corporate-checkout-critical">'
+        . '.woocommerce-checkout .woocommerce-shipping-fields,'
+        . '.woocommerce-checkout #ship-to-different-address,'
+        . '.woocommerce-checkout .shipping_address{display:none !important;}'
+        . '</style>';
+}
+add_action( 'wp_head', 'corporate_checkout_critical_css', 1 );
 
 function corporate_cart_count_fragment( $fragments ) {
     ob_start(); ?>

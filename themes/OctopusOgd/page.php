@@ -100,11 +100,19 @@ $is_wc_page = function_exists( 'is_cart' ) && (
 );
 
 if ( $is_wc_page ) : ?>
-    <main class="section">
+    <div class="woocommerce-notice-bar">
+        <div class="container">
+            <?php if ( function_exists( 'wc_print_notices' ) && wc_notice_count() > 0 ) wc_print_notices(); ?>
+        </div>
+    </div>
+
+    <main class="section section--wc-page">
         <div class="container">
             <?php while ( have_posts() ) : the_post(); ?>
-                <h1><?php the_title(); ?></h1>
-                <div><?php the_content(); ?></div>
+                <header class="wc-page-header">
+                    <h1 class="wc-page-title"><?php the_title(); ?></h1>
+                </header>
+                <div class="wc-page-content"><?php the_content(); ?></div>
             <?php endwhile; ?>
         </div>
     </main>

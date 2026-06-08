@@ -1960,6 +1960,266 @@ body.woocommerce-account .woocommerce-MyAccount-content {
 }
 
 /* ==============================
+   CLASSIC CHECKOUT  ([woocommerce_checkout])
+   ============================== */
+.woocommerce-checkout .wc-page-content {
+    max-width: 1080px;
+    margin: 0 auto;
+}
+
+/* Login / coupon toggles above the form */
+.woocommerce-checkout .woocommerce-form-login-toggle,
+.woocommerce-checkout .woocommerce-form-coupon-toggle {
+    margin-bottom: 20px;
+}
+
+/* Two-column layout: customer details (left) + order review (right) */
+.woocommerce-checkout form.checkout.woocommerce-checkout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    grid-template-areas:
+        "details review-head"
+        "details review";
+    gap: 6px 48px;
+    align-items: start;
+}
+
+.woocommerce-checkout #customer_details      { grid-area: details; min-width: 0; }
+.woocommerce-checkout #order_review_heading  { grid-area: review-head; margin: 0 0 12px; font-size: 1.15rem; font-weight: 600; color: var(--color-navy); }
+.woocommerce-checkout #order_review          { grid-area: review; position: sticky; top: 96px; }
+
+/* Kill the billing/shipping side-by-side squeeze — stack them full width */
+.woocommerce-checkout #customer_details.col2-set,
+.woocommerce-checkout #customer_details .col2-set {
+    display: block;
+    grid-template-columns: none;
+    gap: 0;
+}
+
+.woocommerce-checkout #customer_details .col-1,
+.woocommerce-checkout #customer_details .col-2 {
+    width: 100%;
+    max-width: none;
+    float: none;
+}
+
+.woocommerce-checkout #customer_details .col-2:empty { display: none; }
+
+/* Section headings (Платіжні дані / Доставка) */
+.woocommerce-checkout #customer_details h3,
+.woocommerce-checkout .woocommerce-billing-fields > h3,
+.woocommerce-checkout .woocommerce-shipping-fields > h3,
+.woocommerce-checkout .woocommerce-additional-fields > h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--color-navy);
+    margin: 0 0 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--color-line);
+}
+
+.woocommerce-checkout .woocommerce-additional-fields {
+    margin-top: 20px;
+}
+
+/* Native shipping-address block is removed server-side (woocommerce_cart_needs_shipping_address);
+   hard-hide it in CSS as well so it can never flash before WooCommerce's JS runs.
+   Nova Poshta fields live in .woocommerce-additional-fields, so they are unaffected. */
+.woocommerce-checkout .woocommerce-shipping-fields,
+.woocommerce-checkout #ship-to-different-address,
+.woocommerce-checkout .shipping_address {
+    display: none !important;
+}
+
+/* Form rows */
+.woocommerce-checkout .form-row { margin: 0 0 16px; padding: 0; }
+
+/* Nova Poshta (Morkva) renders hidden ref-fields as empty form-rows that
+   still take vertical space — collapse them so the visible selects sit close. */
+.woocommerce-checkout .mrkv_ua_shipping_checkout_fields p.form-row:has(> input.input-hidden:only-child),
+.woocommerce-checkout .mrkv_ua_shipping_checkout_fields p.form-row:has(> input[type="hidden"]:only-child) {
+    display: none !important;
+    margin: 0 !important;
+}
+
+/* Explicit fallback — collapse the known hidden ref-field wrappers by id suffix */
+.woocommerce-checkout p.form-row[id$="_label_field"],
+.woocommerce-checkout p.form-row[id$="_ref_field"],
+.woocommerce-checkout p.form-row[id$="_area_name_field"],
+.woocommerce-checkout p.form-row[id$="_number_field"],
+.woocommerce-checkout p.form-row[id$="_enabled_field"] {
+    display: none !important;
+    margin: 0 !important;
+}
+
+.woocommerce-checkout .mrkv_ua_shipping_checkout_fields,
+.woocommerce-checkout .mrkv_ua_shipping_checkout_fields [id$="-shipping-info"] {
+    margin: 0;
+}
+
+.woocommerce-checkout .mrkv_ua_shipping_checkout_fields p.form-row { margin: 0 0 16px; }
+.woocommerce-checkout .mrkv_ua_shipping_checkout_fields p.form-row:last-child { margin-bottom: 0; }
+
+.woocommerce-checkout .form-row-first,
+.woocommerce-checkout .form-row-last {
+    width: calc(50% - 8px);
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 0;
+}
+.woocommerce-checkout .form-row-first { margin-right: 12px; }
+
+/* Country is locked to Ukraine — hide the leftover label/row (hidden input still submits) */
+.woocommerce-checkout #billing_country_field,
+.woocommerce-checkout #shipping_country_field { display: none; }
+
+/* Selects (Nova Poshta city / warehouse) */
+.woocommerce-checkout select,
+.woocommerce-checkout .select2-container--default .select2-selection--single {
+    width: 100% !important;
+    min-height: 46px;
+    height: auto;
+    padding: 11px 14px;
+    background: var(--color-bg);
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--color-navy);
+    line-height: 1.4;
+}
+
+.woocommerce-checkout .select2-container--default .select2-selection--single {
+    display: flex;
+    align-items: center;
+}
+.woocommerce-checkout .select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding: 0;
+    line-height: 1.4;
+    color: var(--color-navy);
+}
+.woocommerce-checkout .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100%;
+    top: 0;
+    right: 8px;
+}
+.woocommerce-checkout .select2-dropdown {
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius);
+}
+
+/* Order review card */
+.woocommerce-checkout #order_review {
+    background: var(--color-bg-cool);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+}
+
+.woocommerce-checkout #order_review .shop_table {
+    width: 100%;
+    margin: 0 0 8px;
+    border: none;
+    border-collapse: collapse;
+    background: transparent;
+}
+
+.woocommerce-checkout #order_review .shop_table th,
+.woocommerce-checkout #order_review .shop_table td {
+    padding: 12px 0;
+    border: none;
+    border-bottom: 1px solid var(--color-line);
+    font-size: 0.92rem;
+    color: var(--color-text);
+    text-align: left;
+}
+
+.woocommerce-checkout #order_review .shop_table th { color: var(--color-mute); font-weight: 600; }
+.woocommerce-checkout #order_review .shop_table td.product-total,
+.woocommerce-checkout #order_review .shop_table th + td,
+.woocommerce-checkout #order_review .shop_table .amount { text-align: right; white-space: nowrap; }
+
+.woocommerce-checkout #order_review .cart_item .product-name { color: var(--color-navy); font-weight: 500; }
+
+.woocommerce-checkout #order_review .order-total th,
+.woocommerce-checkout #order_review .order-total td {
+    border-bottom: none;
+    padding-top: 16px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-navy);
+}
+
+/* Payment box */
+.woocommerce-checkout #payment {
+    background: transparent;
+    border-radius: 0;
+    margin-top: 20px;
+}
+
+.woocommerce-checkout #payment ul.payment_methods {
+    border: none;
+    padding: 0;
+    margin: 0 0 16px;
+    list-style: none;
+}
+
+.woocommerce-checkout #payment ul.payment_methods li {
+    padding: 14px 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    background: var(--color-bg);
+}
+
+.woocommerce-checkout #payment ul.payment_methods li label {
+    display: inline;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--color-navy);
+}
+
+.woocommerce-checkout #payment div.payment_box {
+    background: var(--color-bg-cool);
+    border-radius: var(--radius);
+    font-size: 0.88rem;
+    color: var(--color-text-mute);
+    margin-top: 12px;
+}
+.woocommerce-checkout #payment div.payment_box::before { display: none; }
+
+.woocommerce-checkout #payment .form-row.place-order { padding: 0; margin: 0; }
+
+.woocommerce-checkout #place_order {
+    width: 100%;
+    padding: 16px 24px !important;
+    font-size: 0.85rem !important;
+}
+
+.woocommerce-checkout .woocommerce-terms-and-conditions-wrapper { margin-bottom: 16px; }
+
+/* Responsive — single column */
+@media (max-width: 900px) {
+    .woocommerce-checkout form.checkout.woocommerce-checkout {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "details"
+            "review-head"
+            "review";
+    }
+    .woocommerce-checkout #order_review { position: static; }
+}
+
+@media (max-width: 520px) {
+    .woocommerce-checkout .form-row-first,
+    .woocommerce-checkout .form-row-last {
+        width: 100%;
+        margin-right: 0;
+    }
+}
+
+/* ==============================
    EMPTY CART (custom render bypassing Cart Block)
    ============================== */
 .section--empty-cart .empty-cart {
