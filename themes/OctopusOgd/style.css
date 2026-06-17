@@ -7,7 +7,7 @@ Description: Octopus OGD — custom e-commerce theme by Octopus security. Single
 Version: 1.0.0
 Requires at least: 6.0
 Tested up to: 6.7
-Requires PHP: 8.0
+Requires PHP: 7.4
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: corporate
@@ -453,13 +453,14 @@ a:hover {
    MAIN NAV (WP menu)
    ============================== */
 .main-nav {
-    border-top: 1px solid var(--color-line);
-    margin-top: 16px;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .main-nav-inner {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
 }
 
 .main-nav-menu {
@@ -581,25 +582,45 @@ a:hover {
 }
 
 @media (max-width: 860px) {
+    .main-nav {
+        flex: 0 0 auto;
+    }
+
     .main-nav-inner {
-        flex-direction: column;
         align-items: stretch;
     }
 
     .main-nav-toggle {
         display: inline-flex;
-        justify-content: flex-start;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius);
+    }
+
+    .main-nav-toggle span {
+        display: none;
     }
 
     .main-nav-menu {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100%;
+        background: var(--color-bg);
+        border-top: 1px solid var(--color-line);
+        border-bottom: 1px solid var(--color-line);
+        box-shadow: 0 16px 36px rgba(10, 25, 41, 0.12);
+        padding: 0 32px;
         flex-direction: column;
         align-items: stretch;
         gap: 0;
         overflow: hidden;
         max-height: 0;
         transition: max-height 0.22s ease;
-        border-top: 1px solid var(--color-line);
-        margin-top: -1px;
+        z-index: 110;
     }
 
     .main-nav-inner.open .main-nav-menu {
@@ -3119,6 +3140,7 @@ body.woocommerce-account .woocommerce-MyAccount-content {
 
 @media (max-width: 768px) {
     .container { padding: 0 20px; }
+    .main-nav-menu { padding: 0 20px; }
 
     .hero-content { padding: 80px 20px; }
     .hero h1 { font-size: 2.4rem; }
@@ -3172,9 +3194,14 @@ body.woocommerce-account .woocommerce-MyAccount-content {
         flex-direction: column;
         align-items: flex-start;
     }
+
+    a.gt-current-wrapper.notranslate.glink.nturl.gt_raw_link-xxjexk {
+        display: none;
+    }
 }
 
 @media (max-width: 480px) {
     .hero h1 { font-size: 1.9rem; }
     .hero-content { padding: 60px 20px; }
 }
+

@@ -12,6 +12,10 @@ $about_title = get_option( 'corporate_about_title', 'Lorem Ipsum Dolor Sit Amet'
 $products_title = get_option( 'corporate_products_title', 'Наші товари' );
 $products_count = get_option( 'corporate_products_count', 6 );
 
+$cta_eyebrow  = get_option( 'corporate_cta_eyebrow', 'Lorem ipsum' );
+$cta_title    = get_option( 'corporate_cta_title', 'Lorem Ipsum Dolor Sit Amet Consectetur' );
+$cta_subtitle = get_option( 'corporate_cta_subtitle', 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.' );
+
 $about_defaults = array(
     array( 'Consectetur Adipiscing Elit', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' ),
     array( 'Ut Enim Ad Minim Veniam', 'Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit.' ),
@@ -164,9 +168,9 @@ $faq_defaults = array(
     <div class="container">
         <div class="cta-block">
             <div class="cta-block__content">
-                <span class="eyebrow">Lorem ipsum</span>
-                <h2 class="cta-title">Lorem Ipsum Dolor Sit Amet Consectetur</h2>
-                <p class="cta-subtitle">Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                <?php if ( $cta_eyebrow ) : ?><span class="eyebrow"><?php echo esc_html( $cta_eyebrow ); ?></span><?php endif; ?>
+                <?php if ( $cta_title ) : ?><h2 class="cta-title"><?php echo esc_html( $cta_title ); ?></h2><?php endif; ?>
+                <?php if ( $cta_subtitle ) : ?><p class="cta-subtitle"><?php echo esc_html( $cta_subtitle ); ?></p><?php endif; ?>
             </div>
         </div>
     </div>

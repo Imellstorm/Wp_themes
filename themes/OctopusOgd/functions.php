@@ -453,6 +453,18 @@ function corporate_customize_register( $wp_customize ) {
         $wp_customize->add_setting( "corporate_faq_{$i}_answer", array( 'type' => 'option', 'default' => '', 'sanitize_callback' => 'wp_kses_post' ) );
         $wp_customize->add_control( "corporate_faq_{$i}_answer", array( 'label' => sprintf( 'FAQ %d — Answer', $i ), 'section' => 'corporate_faq', 'type' => 'textarea' ) );
     }
+
+    // === CTA / Feature Section ===
+    $wp_customize->add_section( 'corporate_cta', array( 'title' => 'CTA Section', 'panel' => 'corporate_panel' ) );
+
+    $wp_customize->add_setting( 'corporate_cta_eyebrow', array( 'type' => 'option', 'default' => 'Lorem ipsum', 'sanitize_callback' => 'sanitize_text_field' ) );
+    $wp_customize->add_control( 'corporate_cta_eyebrow', array( 'label' => 'CTA Eyebrow', 'section' => 'corporate_cta', 'type' => 'text' ) );
+
+    $wp_customize->add_setting( 'corporate_cta_title', array( 'type' => 'option', 'default' => 'Lorem Ipsum Dolor Sit Amet Consectetur', 'sanitize_callback' => 'sanitize_text_field' ) );
+    $wp_customize->add_control( 'corporate_cta_title', array( 'label' => 'CTA Title (H2)', 'section' => 'corporate_cta', 'type' => 'text' ) );
+
+    $wp_customize->add_setting( 'corporate_cta_subtitle', array( 'type' => 'option', 'default' => 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.', 'sanitize_callback' => 'sanitize_textarea_field' ) );
+    $wp_customize->add_control( 'corporate_cta_subtitle', array( 'label' => 'CTA Subtitle', 'section' => 'corporate_cta', 'type' => 'textarea' ) );
 }
 add_action( 'customize_register', 'corporate_customize_register' );
 
@@ -474,7 +486,7 @@ function corporate_maybe_export() {
 add_action( 'admin_init', 'corporate_maybe_export' );
 
 function corporate_get_option_keys() {
-    $keys = array( 'corporate_hero_image', 'corporate_hero_eyebrow', 'corporate_hero_title', 'corporate_hero_subtitle', 'corporate_about_title', 'corporate_products_title', 'corporate_products_count' );
+    $keys = array( 'corporate_hero_image', 'corporate_hero_eyebrow', 'corporate_hero_title', 'corporate_hero_subtitle', 'corporate_about_title', 'corporate_products_title', 'corporate_products_count', 'corporate_cta_eyebrow', 'corporate_cta_title', 'corporate_cta_subtitle' );
     for ( $i = 1; $i <= 5; $i++ ) {
         $keys[] = "corporate_about_point_{$i}_title";
         $keys[] = "corporate_about_point_{$i}_text";
