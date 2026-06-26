@@ -16,14 +16,6 @@ $cta_eyebrow  = get_option( 'corporate_cta_eyebrow', 'Lorem ipsum' );
 $cta_title    = get_option( 'corporate_cta_title', 'Lorem Ipsum Dolor Sit Amet Consectetur' );
 $cta_subtitle = get_option( 'corporate_cta_subtitle', 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.' );
 
-$about_defaults = array(
-    array( 'Consectetur Adipiscing Elit', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' ),
-    array( 'Ut Enim Ad Minim Veniam', 'Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit.' ),
-    array( 'Duis Aute Irure Dolor', 'In reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.' ),
-    array( 'Excepteur Sint Occaecat', 'Sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem.' ),
-    array( 'Nemo Enim Ipsam Voluptatem', 'Quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.' ),
-);
-
 $faq_defaults = array(
     array( 'Lorem ipsum dolor sit amet, consectetur adipiscing elit?', 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.' ),
     array( 'Ut enim ad minim veniam, quis nostrud exercitation?', 'Ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.' ),
@@ -145,21 +137,31 @@ $faq_defaults = array(
             <div class="section-header__index">— 02 / Про нас</div>
             <h2 class="section-title"><?php echo esc_html( $about_title ); ?></h2>
         </div>
-        <ul class="about-points">
-            <?php for ( $i = 1; $i <= 5; $i++ ) :
-                $pt = get_option( "corporate_about_point_{$i}_title", $about_defaults[ $i - 1 ][0] );
-                $pd = get_option( "corporate_about_point_{$i}_text", $about_defaults[ $i - 1 ][1] );
-                if ( ! $pt && ! $pd ) continue;
-            ?>
+        <?php
+        $about_points = array();
+        for ( $i = 1; $i <= 5; $i++ ) {
+            $pt = get_option( "corporate_about_point_{$i}_title", '' );
+            $pd = get_option( "corporate_about_point_{$i}_text", '' );
+            if ( ! $pt && ! $pd ) continue;
+            $about_points[] = array( $pt, $pd );
+        }
+        if ( $about_points ) :
+            $hide_numbers = count( $about_points ) <= 1;
+        ?>
+        <ul class="about-points<?php echo $hide_numbers ? ' about-points--no-numbers' : ''; ?>">
+            <?php foreach ( $about_points as $idx => $point ) : ?>
             <li>
-                <span class="point-number">/ <?php echo str_pad( $i, 2, '0', STR_PAD_LEFT ); ?></span>
+                <?php if ( ! $hide_numbers ) : ?>
+                <span class="point-number">/ <?php echo str_pad( $idx + 1, 2, '0', STR_PAD_LEFT ); ?></span>
+                <?php endif; ?>
                 <div>
-                    <strong><?php echo esc_html( $pt ); ?></strong>
-                    <p><?php echo esc_html( $pd ); ?></p>
+                    <?php if ( $point[0] ) : ?><strong><?php echo esc_html( $point[0] ); ?></strong><?php endif; ?>
+                    <?php if ( $point[1] ) : ?><p><?php echo esc_html( $point[1] ); ?></p><?php endif; ?>
                 </div>
             </li>
-            <?php endfor; ?>
+            <?php endforeach; ?>
         </ul>
+        <?php endif; ?>
     </div>
 </section>
 
